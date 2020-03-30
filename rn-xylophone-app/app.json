@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Blank Template",
-    "slug": "Expo-Audio-SDK",
+    "slug": "rn-xylophone-app",
     "privacy": "public",
     "sdkVersion": "36.0.0",
     "platforms": [
