@@ -1,47 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Audio } from "expo-av";
 import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
 import { NoteTwo } from "./constants/Colors";
-const xyloSound = require("./assets/note1.wav");
+const xyloSounds = [
+  require("./assets/note1.wav"),
+  require("./assets/note2.wav"),
+  require("./assets/note3.wav")
+];
 
 const App = () => {
-  const [soundObject, setSoundObject] = useState(null);
-  // const [play, setPlay] = useState(true); maybe there's a way i can use state to manage th looping.
-
-  useEffect(() => {
-    loadSoundObject();
-  }, []);
-
-  const loadSoundObject = async () => {
-    try {
-      const _soundObject = new Audio.Sound();
-      await _soundObject.loadAsync(xyloSound);
-      setSoundObject(_soundObject);
-    } catch (e) {
-      console.log(e);
-      setSoundObject(null);
-    }
-  };
-
-  const handlePlaySound = async () => {
-    if (soundObject) {
-      try {
-        const playbackStatus = await soundObject.playAsync();
-        setTimeout(() => {
-          console.log("released from memory");
-          soundObject.unloadAsync();
-        }, playbackStatus.playableDurationMillis);
-      } catch (e) {
-        console.log("pooped.");
+  const isPlayingSounds = useRef(false);
+  const handlePlaySounds = async () => {
+    if (isPlayingSounds.current === false) {
+      isPlayingSounds.current = true;
+      for (let sound of await Promise.all(xyloSounds)) {
+        const soundObject = new Audio.Sound();
+        await soundObject.loadAsync(sound);
+        await soundObject.playAsync().then(playbackStatus => {
+          return new Promise(r => {
+            setTimeout(() => {
+              soundObject.unloadAsync().then(r);
+            }, playbackStatus.playableDurationMillis);
+          });
+        });
       }
-    } else {
-      console.log("pooping");
-
-      loadSoundObject();
+      isPlayingSounds.current = false;
     }
   };
-
-  handlePlaySound();
 
   return (
     <View style={styles.container}>
@@ -73,7 +58,7 @@ const App = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: NoteTwo }]}
-          onPress={handlePlaySound}
+          onPress={handlePlaySounds}
         >
           <Text style={styles.buttonText}>Note 2</Text>
         </TouchableOpacity>
@@ -81,6 +66,35 @@ const App = () => {
     </View>
   );
 };
+
+// const [soundObject, setSoundObject] = useState(null);
+// useEffect(() => {
+//   loadSoundObject();
+// }, []);
+// const loadSoundObject = async () => {
+//   try {
+//     const _soundObject = new Audio.Sound();
+//     await _soundObject.loadAsync(xyloSound);
+//     setSoundObject(_soundObject);
+//   } catch (e) {
+//     console.log(e);
+//     setSoundObject(null);
+//   }
+// };
+// const handlePlaySound = async () => {
+//   if (soundObject) {
+//     try {
+//       let playbackStatus = await soundObject.playAsync();
+//       let playbackStatus2 = await soundObject.playAsync();
+//     } catch (e) {
+//       console.log("pooped.");
+//     }
+//   } else {
+//     console.log("pooping");
+//     loadSoundObject();
+//   }
+// };
+// handlePlaySound();
 
 const styles = StyleSheet.create({
   container: {
