@@ -7,7 +7,16 @@ import PushDown from "./PushDown";
 const xyloSounds = [require("./assets/note1.wav")];
 
 const App = () => {
-  const [playing, setPlaying] = useState(false);
+  Audio.setAudioModeAsync({
+    allowsRecordingIOS: false,
+    staysActiveInBackground: true,
+    interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
+    playsInSilentModeIOS: true,
+    shouldDuckAndroid: true,
+    interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
+    playThroughEarpieceAndroid: false
+  });
+  const [playing, setPlaying] = useState(null);
   const [session, setSession] = useState({
     status: "ok",
     data: null,
@@ -18,8 +27,9 @@ const App = () => {
     console.log("unmount");
 
     return () => {
+      clearSounds();
       setSession({ status: "ok", data: null, error: null });
-      setPlaying(false);
+      setPlaying(null);
     };
   }, []);
 
@@ -64,16 +74,18 @@ const App = () => {
     }
   };
 
+  const repeat = async () => {
+    window.setInterval(() => {
+      playSounds();
+    }, 3750);
+  };
+
   const playSounds = async () => {
     // Go through each sound object file if the array is nonempty and play each sound.
     if (session.data) {
-      console.log("seesion data");
-      if (!playing) {
-        setPlaying(true);
-      }
       try {
         for (let soundObject of await Promise.all(session.data)) {
-          await soundObject.playAsync().then(playbackStatus => {
+          await soundObject.replayAsync().then(playbackStatus => {
             return new Promise(r => {
               setTimeout(() => {
                 r();
@@ -81,6 +93,7 @@ const App = () => {
             });
           });
         }
+        console.log("finished playSoudns");
       } catch (e) {
         console.log("e:", e);
         setSession({
@@ -91,7 +104,6 @@ const App = () => {
         });
       }
     }
-    setPlaying(false);
   };
 
   if (session.status === "error" && session.error) {
@@ -138,7 +150,7 @@ const App = () => {
                 playing || (!playing && session.data) ? NoteTwo : "lightgray"
             }
           ]}
-          onPress={playSounds}
+          onPress={repeat}
           disabled={playing === true || (!playing && !session.data)}
         >
           <Text style={styles.buttonText}>
@@ -149,7 +161,7 @@ const App = () => {
           style={[
             styles.button,
             {
-              backgroundColor: !playing ? "lightgray" : NoteTwo
+              backgroundColor: playing === null ? "lightgray" : NoteTwo
             }
           ]}
           onPress={clearSounds}
